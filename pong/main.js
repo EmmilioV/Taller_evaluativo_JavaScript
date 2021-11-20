@@ -7,13 +7,38 @@
         this.game_over = false;
         this.bars = [];
         this.ball = null;
+        this.playing = false;
     }
 
     self.Board.prototype = {
         get elements(){
-            var elements = this.bars;
-            //elements.push(this.ball);
+            var elements = this.bars.map(function(bar){ return bar; }); //Esto es para realizar una copia del arreglo
+            elements.push(this.ball);
             return elements;
+        }
+    }
+})();
+
+//Para dibujar la pelota
+(function(){
+    self.Ball = function(x, y , radius, board){
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.speed_y = 0;
+        this.speed_x = 3;
+        this.board = board;
+        this.direction = 1;
+
+        board.ball = this;
+        this.kind = "circle";
+
+    }
+    self.Ball.prototype = {
+        move: function(){
+            this.x += (this.speed_x * this.direction);
+            this.y += (this.speed_y);
+
         }
     }
 })();
@@ -68,8 +93,12 @@
         },
         play: function()
         {
-            this.clean();
-            this.draw();
+            if(this.board.playing)
+            {
+                this.clean();
+                this.draw();
+                this.board.ball.move();
+            }
         }
     }
 
@@ -78,10 +107,16 @@
         
         switch(element.kind){
             case "rectangle":
-            contexto.fillRect(element.x, element.y, element.width, element.height);
+                contexto.fillRect(element.x, element.y, element.width, element.height);
+                break;
+            case "circle":
+                contexto.beginPath();
+                contexto.arc(element.x, element.y, element.radius, 0, 7);
+                contexto.fill();
+                contexto.closePath();
             break;
         }
-}
+    }
 
 })();
 
@@ -90,6 +125,7 @@ var bar = new Bar(20, 100, 40, 100, board);
 var bar_2 = new Bar(735, 100, 40, 100, board);
 var canvas = document.getElementById('canvas');
 var board_view = new BoardView(canvas, board);
+var ball = new Ball(350, 100, 10, board);
 
 
 //Para el movimiento de las barras
@@ -97,27 +133,39 @@ document.addEventListener("keydown", function(ev){
     ev.preventDefault();
     if(ev.code == "ArrowUp")
     {
+        ev.preventDefault();
         bar_2.up();
     }
     else if(ev.code == "ArrowDown")
     {
+        ev.preventDefault();
         bar_2.down();
     }
     else if(ev.code == "KeyW")
     {
+        ev.preventDefault();
         bar.up();
     }
     else if(ev.code == "KeyS")
     {
+        ev.preventDefault();
         bar.down();
+    }
+    else if(ev.code == "Space")
+    {
+        ev.preventDefault();
+        board.playing = !board.playing;
     }
 });
 
+board_view.draw(); //esta linea es para inicializar el dibujo en pausa.
+
 window.requestAnimationFrame(controller);
+setTimeout(function(){ 
+    ball.direction = -1
+}, 4000)
 
 function controller(){
-    console.log(board);
     board_view.play();
-    window.requestAnimationFrame(controller);
-
+    requestAnimationFrame(controller);
 }
